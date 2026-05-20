@@ -15,11 +15,23 @@ MainWindow::MainWindow(QWidget *parent)
 
     leafCountLabel = new QLabel("Количество листьев: 0", this);
     ui->statusbar->addPermanentWidget(leafCountLabel);
+
+    connect(ui->mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::onSubWindowActivated);
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::onSubWindowActivated(QMdiSubWindow *window) {
+    if (window) {
+        QTreeWidget *tree = qobject_cast<QTreeWidget*>(window->widget());
+        updateLeafCount(tree);
+    } else {
+        leafCountLabel->setText("Количество листьев: 0");
+        ui->statusbar->showMessage("");
+    }
 }
 
 void MainWindow::on_actionOpen_triggered()
@@ -33,7 +45,8 @@ void MainWindow::on_actionOpen_triggered()
         return;
     }
 
-    ui->treeWidget->clear();
+    QTreeWidget *tree = setupNewSubWindow(fileName);
+    tree->setProperty("filePath", fileName);
 
     QTextStream in(&file);
     while (!in.atEnd()) {
@@ -41,20 +54,19 @@ void MainWindow::on_actionOpen_triggered()
         if (line.isEmpty()) continue;
 
         QStringList pathElements = line.split(" ", Qt::SkipEmptyParts);
-        addPathToTree(pathElements);
+        addPathToTree(pathElements, tree);
     }
     file.close();
 
-    ui->treeWidget->expandAll();
-    updateLeafCount();
-
-    currentFilePath = fileName;
+    tree->expandAll();
+    updateLeafCount(tree);
 }
 
-void MainWindow::addPathToTree(const QStringList &pathElements)
+void MainWindow::addPathToTree(const QStringList &pathElements, QTreeWidget *tree)
 {
+    if (!tree) return;
+
     QTreeWidgetItem *currentParent = nullptr;
-    QTreeWidget *tree = ui->treeWidget;
 
     for (const QString &word : pathElements) {
         QTreeWidgetItem *match = nullptr;
@@ -84,14 +96,20 @@ void MainWindow::addPathToTree(const QStringList &pathElements)
 
 void MainWindow::on_actionAddPath_triggered()
 {
+    QTreeWidget *tree = activeTreeWidget();
+    if (!tree) {
+        QMessageBox::information(this, "Внимание", "Создайте или откройте документ.");
+        return;
+    }
+
     bool ok;
     QString text = QInputDialog::getText(this, "Добавить путь", "Введите путь (через пробел):", QLineEdit::Normal, "", &ok);
 
     if (ok && !text.trimmed().isEmpty()) {
         QStringList pathElements = text.trimmed().split(" ", Qt::SkipEmptyParts);
-        addPathToTree(pathElements);
-        ui->treeWidget->expandAll();
-        updateLeafCount();
+        addPathToTree(pathElements, tree);
+        tree->expandAll();
+        updateLeafCount(tree);
     }
 }
 
@@ -108,19 +126,24 @@ int MainWindow::countLeaves(QTreeWidgetItem *item)
     return count;
 }
 
-void MainWindow::updateLeafCount()
+void MainWindow::updateLeafCount(QTreeWidget *tree)
 {
+    if (!tree) return;
+
     int totalLeaves = 0;
-    for (int i = 0; i < ui->treeWidget->topLevelItemCount(); ++i) {
-        totalLeaves += countLeaves(ui->treeWidget->topLevelItem(i));
+    for (int i = 0; i < tree->topLevelItemCount(); ++i) {
+        totalLeaves += countLeaves(tree->topLevelItem(i));
     }
     leafCountLabel->setText("Количество листьев: " + QString::number(totalLeaves));
 }
 
-void MainWindow::on_treeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+void MainWindow::onCurrentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
 {
     Q_UNUSED(previous);
-    if (!current) return;
+    if (!current) {
+        ui->statusbar->showMessage("");
+        return;
+    }
 
     QStringList fullPath;
     QTreeWidgetItem *node = current;
@@ -149,12 +172,17 @@ void MainWindow::collectPaths(QTreeWidgetItem *item, QString currentPath, QStrin
 
 void MainWindow::on_actionSave_triggered()
 {
-    if (currentFilePath.isEmpty()) {
+    QTreeWidget *tree = activeTreeWidget();
+    if (!tree) return;
+
+    QString fileName = tree->property("filePath").toString();
+
+    if (fileName.isEmpty()) {
         on_actionSaveAs_triggered();
         return;
     }
 
-    QFile file(currentFilePath);
+    QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QFile::Text)) {
         QMessageBox::warning(this, "Ошибка", "Не удалось открыть файл для записи");
         return;
@@ -163,8 +191,8 @@ void MainWindow::on_actionSave_triggered()
     QTextStream out(&file);
     QStringList allPaths;
 
-    for (int i = 0; i < ui->treeWidget->topLevelItemCount(); ++i) {
-        collectPaths(ui->treeWidget->topLevelItem(i), "", allPaths);
+    for (int i = 0; i < tree->topLevelItemCount(); ++i) {
+        collectPaths(tree->topLevelItem(i), "", allPaths);
     }
 
     for (const QString &path : std::as_const(allPaths)) {
@@ -178,10 +206,53 @@ void MainWindow::on_actionSave_triggered()
 
 void MainWindow::on_actionSaveAs_triggered()
 {
+    QTreeWidget *tree = activeTreeWidget();
+    if (!tree) return;
+
     QString fileName = QFileDialog::getSaveFileName(this, "Сохранить дерево путей", "", "Text Files (*.txt);;All Files (*)");
     if (fileName.isEmpty()) return;
 
-    currentFilePath = fileName;
+    tree->setProperty("filePath", fileName);
+    ui->mdiArea->activeSubWindow()->setWindowTitle(fileName);
+
     on_actionSave_triggered();
+}
+
+
+QTreeWidget* MainWindow::setupNewSubWindow(QString title) {
+    QTreeWidget *tree = new QTreeWidget();
+    tree->setHeaderLabel("Пути");
+
+    QMdiSubWindow *subWindow = ui->mdiArea->addSubWindow(tree);
+    subWindow->setWindowTitle(title);
+    subWindow->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(tree, &QTreeWidget::currentItemChanged, this, &MainWindow::onCurrentItemChanged);
+
+    subWindow->show();
+    return tree;
+}
+
+QTreeWidget* MainWindow::activeTreeWidget() {
+    if (QMdiSubWindow *activeSubWindow = ui->mdiArea->activeSubWindow()) {
+        return qobject_cast<QTreeWidget*>(activeSubWindow->widget());
+    }
+    return nullptr;
+}
+
+void MainWindow::on_actionNew_triggered() {
+    setupNewSubWindow("Новое дерево");
+}
+
+
+void MainWindow::on_actionTile_triggered()
+{
+    ui->mdiArea->tileSubWindows();
+}
+
+
+void MainWindow::on_actionCascade_triggered()
+{
+    ui->mdiArea->cascadeSubWindows();
 }
 

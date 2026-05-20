@@ -16,13 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <widget class="QTreeWidget" name="treeWidget">
-      <column>
-       <property name="text">
-        <string>Пути</string>
-       </property>
-      </column>
-     </widget>
+     <widget class="QMdiArea" name="mdiArea"/>
     </item>
    </layout>
   </widget>
@@ -42,6 +36,7 @@
     <addaction name="actionOpen"/>
     <addaction name="actionSave"/>
     <addaction name="actionSaveAs"/>
+    <addaction name="actionNew"/>
    </widget>
    <widget class="QMenu" name="menuPath">
     <property name="title">
@@ -49,8 +44,22 @@
     </property>
     <addaction name="actionAddPath"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>Вид</string>
+    </property>
+    <widget class="QMenu" name="menuWindows">
+     <property name="title">
+      <string>Окна</string>
+     </property>
+     <addaction name="actionTile"/>
+     <addaction name="actionCascade"/>
+    </widget>
+    <addaction name="menuWindows"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuPath"/>
+   <addaction name="menuView"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
@@ -64,6 +73,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionSave"/>
+   <addaction name="actionNew"/>
    <addaction name="actionOpen"/>
    <addaction name="actionAddPath"/>
   </widget>
@@ -80,7 +90,7 @@
     <string>Добавить путь</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+N</string>
+    <string>Ctrl+Shift+N</string>
    </property>
   </action>
   <action name="actionSave">
@@ -94,6 +104,24 @@
   <action name="actionSaveAs">
    <property name="text">
     <string>Сохранить как</string>
+   </property>
+  </action>
+  <action name="actionNew">
+   <property name="text">
+    <string>Новый</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionTile">
+   <property name="text">
+    <string>Плиткой</string>
+   </property>
+  </action>
+  <action name="actionCascade">
+   <property name="text">
+    <string>Каскадом</string>
    </property>
   </action>
  </widget>
