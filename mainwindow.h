@@ -5,12 +5,71 @@
 #include <QTreeWidgetItem>
 #include <QLabel>
 #include <QMdiSubWindow>
+#include <QDropEvent>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
 }
 QT_END_NAMESPACE
+
+class CustomTreeWidget : public QTreeWidget {
+public:
+    CustomTreeWidget(QWidget *parent = nullptr) : QTreeWidget(parent) {}
+
+protected:
+    void dropEvent(QDropEvent *event) override {
+        QTreeWidget *sourceTree = qobject_cast<QTreeWidget*>(event->source());
+
+        if (sourceTree) {
+            QList<QTreeWidgetItem*> items = sourceTree->selectedItems();
+            if (items.isEmpty()) return;
+
+            QTreeWidgetItem *targetItem = itemAt(event->position().toPoint());
+            DropIndicatorPosition dropPos = dropIndicatorPosition();
+
+            QTreeWidgetItem *temp = targetItem;
+            while (temp) {
+                if (items.contains(temp)) {
+                    event->ignore();
+                    return;
+                }
+                temp = temp->parent();
+            }
+
+            for (QTreeWidgetItem *item : std::as_const(items)) {
+                QTreeWidgetItem *clone = item->clone();
+
+                if (targetItem) {
+                    if (dropPos == QAbstractItemView::OnItem || dropPos == QAbstractItemView::OnViewport) {
+                        targetItem->addChild(clone);
+                        targetItem->setExpanded(true);
+                    } else {
+                        QTreeWidgetItem *parent = targetItem->parent();
+                        if (parent) {
+                            int index = parent->indexOfChild(targetItem);
+                            if (dropPos == QAbstractItemView::BelowItem) index++;
+                            parent->insertChild(index, clone);
+                        } else {
+                            int index = indexOfTopLevelItem(targetItem);
+                            if (dropPos == QAbstractItemView::BelowItem) index++;
+                            insertTopLevelItem(index, clone);
+                        }
+                    }
+                } else {
+                    addTopLevelItem(clone);
+                }
+
+                if (event->dropAction() == Qt::MoveAction) {
+                    delete item;
+                }
+            }
+            event->acceptProposedAction();
+            return;
+        }
+        QTreeWidget::dropEvent(event);
+    }
+};
 
 class MainWindow : public QMainWindow
 {

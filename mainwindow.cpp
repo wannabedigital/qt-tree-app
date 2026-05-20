@@ -6,6 +6,7 @@
 #include <QTextStream>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QAbstractItemModel>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -220,14 +221,29 @@ void MainWindow::on_actionSaveAs_triggered()
 
 
 QTreeWidget* MainWindow::setupNewSubWindow(QString title) {
-    QTreeWidget *tree = new QTreeWidget();
+    CustomTreeWidget *tree = new CustomTreeWidget();
+
     tree->setHeaderLabel("Пути");
+
+    tree->setDragEnabled(true);
+    tree->setAcceptDrops(true);
+    tree->setDropIndicatorShown(true);
+    tree->setDragDropMode(QAbstractItemView::DragDrop);
+    tree->setDefaultDropAction(Qt::MoveAction);
+    tree->setSelectionMode(QAbstractItemView::SingleSelection);
 
     QMdiSubWindow *subWindow = ui->mdiArea->addSubWindow(tree);
     subWindow->setWindowTitle(title);
     subWindow->setAttribute(Qt::WA_DeleteOnClose);
 
     connect(tree, &QTreeWidget::currentItemChanged, this, &MainWindow::onCurrentItemChanged);
+
+    connect(tree->model(), &QAbstractItemModel::rowsInserted, this, [this, tree]() {
+        if (activeTreeWidget() == tree) updateLeafCount(tree);
+    });
+    connect(tree->model(), &QAbstractItemModel::rowsRemoved, this, [this, tree]() {
+        if (activeTreeWidget() == tree) updateLeafCount(tree);
+    });
 
     subWindow->show();
     return tree;
