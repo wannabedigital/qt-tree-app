@@ -110,6 +110,10 @@ private slots:
 
     void on_actionCascade_triggered();
 
+    void on_actionExpand_triggered();
+
+    void on_actionCollapse_triggered();
+
 private:
     Ui::MainWindow *ui;
     QLabel *leafCountLabel;

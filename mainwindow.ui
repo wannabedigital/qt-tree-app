@@ -139,7 +139,7 @@
   </action>
   <action name="actionCollapse">
    <property name="text">
-    <string>Скрыть все</string>
+    <string>Свернуть все</string>
    </property>
   </action>
  </widget>
