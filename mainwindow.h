@@ -37,17 +37,19 @@ protected:
                 temp = temp->parent();
             }
 
-            for (QTreeWidgetItem *item : std::as_const(items)) {
-                QTreeWidgetItem *currentParent = item->parent();
+            if (sourceTree == this) {
+                for (QTreeWidgetItem *item : std::as_const(items)) {
+                    QTreeWidgetItem *currentParent = item->parent();
 
-                if (targetItem && targetItem == currentParent && (dropPos == QAbstractItemView::OnItem || dropPos == QAbstractItemView::OnViewport)) {
-                    event->ignore();
-                    return;
-                }
+                    if (targetItem && targetItem == currentParent && (dropPos == QAbstractItemView::OnItem || dropPos == QAbstractItemView::OnViewport)) {
+                        event->ignore();
+                        return;
+                    }
 
-                if (!targetItem && currentParent == nullptr) {
-                    event->ignore();
-                    return;
+                    if (!targetItem && currentParent == nullptr) {
+                        event->ignore();
+                        return;
+                    }
                 }
             }
 
