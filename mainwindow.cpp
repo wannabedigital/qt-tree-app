@@ -18,6 +18,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->statusbar->addPermanentWidget(leafCountLabel);
 
     connect(ui->mdiArea, &QMdiArea::subWindowActivated, this, &MainWindow::onSubWindowActivated);
+
+    setAcceptDrops(true);
 }
 
 MainWindow::~MainWindow()
@@ -38,29 +40,9 @@ void MainWindow::onSubWindowActivated(QMdiSubWindow *window) {
 void MainWindow::on_actionOpen_triggered()
 {
     QString fileName = QFileDialog::getOpenFileName(this, "Открыть файл путей", "", "Text Files (*.txt);;All Files (*)");
-    if (fileName.isEmpty()) return;
-
-    QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QFile::Text)) {
-        QMessageBox::warning(this, "Ошибка", "Не удалось открыть файл");
-        return;
+    if (!fileName.isEmpty()) {
+        openFile(fileName);
     }
-
-    QTreeWidget *tree = setupNewSubWindow(fileName);
-    tree->setProperty("filePath", fileName);
-
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine().trimmed();
-        if (line.isEmpty()) continue;
-
-        QStringList pathElements = line.split(" ", Qt::SkipEmptyParts);
-        addPathToTree(pathElements, tree);
-    }
-    file.close();
-
-    tree->expandAll();
-    updateLeafCount(tree);
 }
 
 void MainWindow::addPathToTree(const QStringList &pathElements, QTreeWidget *tree)
@@ -287,6 +269,54 @@ void MainWindow::on_actionCollapse_triggered()
     QTreeWidget *tree = activeTreeWidget();
     if (tree) {
         tree->collapseAll();
+    }
+}
+
+void MainWindow::openFile(const QString &fileName)
+{
+    QFile file(fileName);
+    if (!file.open(QIODevice::ReadOnly | QFile::Text)) {
+        QMessageBox::warning(this, "Ошибка", "Не удалось открыть файл:\n" + fileName);
+        return;
+    }
+
+    QTreeWidget *tree = setupNewSubWindow(fileName);
+    tree->setProperty("filePath", fileName);
+
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        QString line = in.readLine().trimmed();
+        if (line.isEmpty()) continue;
+
+        QStringList pathElements = line.split(" ", Qt::SkipEmptyParts);
+        addPathToTree(pathElements, tree);
+    }
+    file.close();
+
+    tree->expandAll();
+    updateLeafCount(tree);
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls()) {
+        event->acceptProposedAction();
+    }
+}
+
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    const QMimeData *mimeData = event->mimeData();
+
+    if (mimeData->hasUrls()) {
+        QList<QUrl> urlList = mimeData->urls();
+
+        for (const QUrl &url : std::as_const(urlList)) {
+            if (url.isLocalFile()) {
+                openFile(url.toLocalFile());
+            }
+        }
+        event->acceptProposedAction();
     }
 }
 

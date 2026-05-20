@@ -6,6 +6,9 @@
 #include <QLabel>
 #include <QMdiSubWindow>
 #include <QDropEvent>
+#include <QDragEnterEvent>
+#include <QMimeData>
+#include <QUrl>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -91,6 +94,10 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
 
+protected:
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
+
 private slots:
     void on_actionOpen_triggered();
 
@@ -125,5 +132,7 @@ private:
     int countLeaves(QTreeWidgetItem *item);
     void updateLeafCount(QTreeWidget *tree);
     void collectPaths(QTreeWidgetItem *item, QString currentPath, QStringList &results);
+
+    void openFile(const QString &fileName);
 };
 #endif // MAINWINDOW_H
