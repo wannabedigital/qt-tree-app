@@ -272,3 +272,21 @@ void MainWindow::on_actionCascade_triggered()
     ui->mdiArea->cascadeSubWindows();
 }
 
+
+void MainWindow::on_actionExpand_triggered()
+{
+    QTreeWidget *tree = activeTreeWidget();
+    if (tree) {
+        tree->expandAll();
+    }
+}
+
+
+void MainWindow::on_actionCollapse_triggered()
+{
+    QTreeWidget *tree = activeTreeWidget();
+    if (tree) {
+        tree->collapseAll();
+    }
+}
+

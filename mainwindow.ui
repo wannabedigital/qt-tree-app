@@ -55,7 +55,15 @@
      <addaction name="actionTile"/>
      <addaction name="actionCascade"/>
     </widget>
+    <widget class="QMenu" name="menuNodes">
+     <property name="title">
+      <string>Узлы</string>
+     </property>
+     <addaction name="actionExpand"/>
+     <addaction name="actionCollapse"/>
+    </widget>
     <addaction name="menuWindows"/>
+    <addaction name="menuNodes"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuPath"/>
@@ -122,6 +130,16 @@
   <action name="actionCascade">
    <property name="text">
     <string>Каскадом</string>
+   </property>
+  </action>
+  <action name="actionExpand">
+   <property name="text">
+    <string>Раскрыть все</string>
+   </property>
+  </action>
+  <action name="actionCollapse">
+   <property name="text">
+    <string>Скрыть все</string>
    </property>
   </action>
  </widget>

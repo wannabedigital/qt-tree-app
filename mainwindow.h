@@ -75,10 +75,6 @@ protected:
                 } else {
                     addTopLevelItem(clone);
                 }
-
-                if (event->dropAction() == Qt::MoveAction) {
-                    delete item;
-                }
             }
             event->acceptProposedAction();
             return;
