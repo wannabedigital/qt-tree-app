@@ -38,6 +38,20 @@ protected:
             }
 
             for (QTreeWidgetItem *item : std::as_const(items)) {
+                QTreeWidgetItem *currentParent = item->parent();
+
+                if (targetItem && targetItem == currentParent && (dropPos == QAbstractItemView::OnItem || dropPos == QAbstractItemView::OnViewport)) {
+                    event->ignore();
+                    return;
+                }
+
+                if (!targetItem && currentParent == nullptr) {
+                    event->ignore();
+                    return;
+                }
+            }
+
+            for (QTreeWidgetItem *item : std::as_const(items)) {
                 QTreeWidgetItem *clone = item->clone();
 
                 if (targetItem) {
