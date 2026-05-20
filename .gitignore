@@ -1,0 +1,17 @@
+# Папки сборки (Qt Creator обычно создает папки, начинающиеся с build)
+build/
+build-*/
+
+# Пользовательские настройки Qt Creator
+*.pro.user
+*.pro.user.*
+.qtcreator/
+
+# Кэш qmake
+.qmake.stash
+.qmake.cache
+
+# Объектные и исполняемые файлы (на всякий случай)
+*.o
+*.obj
+*.exe
